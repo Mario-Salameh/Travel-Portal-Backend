@@ -1,0 +1,8 @@
+This API powers a modern travel management system for companies handling group travel, customer bookings, and travel policies.
+
+Built with .NET Core APIs, it provides secure and efficient endpoints to manage travel groups, customers, family members, and associated policies, with role-based access control via JWT tokens to ensure data integrity and authorized usage.
+
+**Contacts:**
+- [Ammar Al-Shammari](https://teams.microsoft.com/l/chat/0/0?users=ashammari@trustholding.com)
+- [Hamdi Al-Addasi](https://teams.microsoft.com/l/chat/0/0?users=haddasi@trustholding.com)
+
