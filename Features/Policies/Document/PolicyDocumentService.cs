@@ -66,21 +66,51 @@ public static class PolicyDocumentServiceExtensions
         }
     }
 
+    // public static void AddDraftWaterMark(this PageDescriptor page) =>
+    //     page.Background()
+    //         .AlignCenter()
+    //         .AlignMiddle()
+    //         .Rotate(-45)
+    //         .Text("DRAFT")
+    //         .FontSize(150)
+    //         .FontColor("#80808028");
+
+    // public static void AddCancelledWaterMark(this PageDescriptor page) =>
+    //     page.Background()
+    //         .AlignCenter()
+    //         .AlignMiddle()
+    //         .Rotate(-45)
+    //         .Text("CANCELLED")
+    //         .FontSize(150)
+    //         .FontColor("#80808028");      
+
     public static void AddDraftWaterMark(this PageDescriptor page) =>
-        page.Foreground()
-            .AlignCenter()
-            .AlignMiddle()
-            .Text("DRAFT")
-            .FontSize(100)
-            .FontColor("#80808028");
+    page.Background()
+        .Element(container =>
+            container
+                .AlignCenter()
+                .AlignMiddle()
+                .PaddingTop(170)
+                .PaddingLeft(20)
+                .Rotate(-45)
+                .Text("DRAFT")
+                .FontSize(150)
+                .FontColor("#80808028")
+        );
 
     public static void AddCancelledWaterMark(this PageDescriptor page) =>
-        page.Foreground()
-            .AlignCenter()
-            .AlignMiddle()
-            .Text("CANCELLED")
-            .FontSize(100)
-            .FontColor("#80808028");        
+        page.Background()
+            .Element(container =>
+                container
+                    .AlignCenter()
+                    .AlignMiddle()
+                    .PaddingTop(170)
+                    .PaddingLeft(50)
+                    .Rotate(-45)
+                    .Text("CANCELLED")
+                    .FontSize(95)
+                    .FontColor("#80808028")
+            );
 
     public static void AddTrustPalestineHeader(this ColumnDescriptor column) =>
         column.Item().Row(row =>

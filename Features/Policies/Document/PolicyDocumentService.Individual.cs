@@ -335,15 +335,10 @@ public partial class PolicyDocumentService
                 page.Size(PageSizes.A4);
                 page.Margin(30);
 
-                if (isDraft)
-                {
-                    page.Foreground()
-                    .AlignCenter()
-                    .AlignMiddle()
-                    .Text("DRAFT")
-                    .FontSize(100)
-                    .FontColor("#80808028");
-                }
+                if (isCancelled)
+                    page.AddCancelledWaterMark();
+                else if (isDraft)
+                    page.AddDraftWaterMark();
 
                 page.Header().Column(column =>
                 {
