@@ -137,9 +137,7 @@ namespace TrustSystem.Backend.DTOs
     public record AgentViewGroupPolicy([property: JsonIgnore] TV_POLICY_PACKAGE policy) : AgentViewPolicy(DateOnly.FromDateTime(policy.TPP_ISSUE_DATE)
     , policy.TPP_STATUS == "C" ? PolicyStatus.Endorsed : (policy.TPP_PRINT_FLAG > 0 ? PolicyStatus.Generated : PolicyStatus.Draft))
     {
-        public string policyRefNumber => $"{policy.TPP_OFC_ID} {policy.TPP_PLT_ID} {policy.TPP_YEAR} {policy.TPP_POL_NO}";
-        public string policyNumber => policy.TPP_STATUS == "C" ? $"{policyRefNumber} C" : policyRefNumber;
-
+       public string policyNumber { get; set; } = $"{policy.TPP_OFC_ID} {policy.TPP_PLT_ID} {policy.TPP_YEAR} {policy.TPP_POL_NO}{(policy.TPP_STATUS == "C" ? " C" : "")}";
         public DateOnly startDate { get; set; } = DateOnly.FromDateTime(policy.TPP_INCEPTION_DATE);
         public int duration { get; set; } = policy.TPP_PERIOD;
 
@@ -241,7 +239,7 @@ namespace TrustSystem.Backend.DTOs
     public record CustomerViewGroupPolicy([property: JsonIgnore] TV_POLICY_PACKAGE policy) : CustomerViewPolicy(3
     , policy.TPP_STATUS == "C" ? PolicyStatus.Endorsed : (policy.TPP_PRINT_FLAG > 0 ? PolicyStatus.Generated : PolicyStatus.Draft))
     {
-        public string policyNumber { get; set; } = policy.TPP_OFC_ID + " " + policy.TPP_PLT_ID + " " + policy.TPP_YEAR + " " + policy.TPP_POL_NO ?? "";
+        public string policyNumber { get; set; } = $"{policy.TPP_OFC_ID} {policy.TPP_PLT_ID} {policy.TPP_YEAR} {policy.TPP_POL_NO}{(policy.TPP_STATUS == "C" ? " C" : "")}";
         public DateOnly startDate { get; set; } = DateOnly.FromDateTime(policy.TPP_INCEPTION_DATE);
         public int duration { get; set; } = policy.TPP_PERIOD;
 

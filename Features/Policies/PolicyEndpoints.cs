@@ -183,7 +183,7 @@ public static class PolicyEndpoints
         })
         .WithSummary("Calculate Premium")
         .Produces<CalculatePremiumResponseDTO>()
-        .RequireAuthorization("regular");
+        .AllowAnonymous();
 
         group.MapGet("/{PolicyRefNumber}", async (PolicyRepository policyRepository, APPL_INS db, [FromRoute] string PolicyRefNumber, [FromQuery] int? serial) =>
         {

@@ -50,6 +50,9 @@ public class PolicyRepository(
             if (!string.IsNullOrWhiteSpace(inquiryForm.policyRefNumber))
             {
                 var refNo = inquiryForm.policyRefNumber;
+                if (refNo.EndsWith(" C", StringComparison.Ordinal))
+                    refNo = refNo[..^2];
+
                 query = query.Where(p =>
                     (p.TPP_OFC_ID + " " + p.TPP_PLT_ID + " " + p.TPP_YEAR + " " + p.TPP_POL_NO)
                     .Contains(refNo));
@@ -122,7 +125,15 @@ public class PolicyRepository(
                     p.POL_ISSUE_DATE <= inquiryForm.toDate.Value.ToDateTime(TimeOnly.MaxValue));
         }
 
-        query = query.Where(p => p.POL_CGP_ID == 8 && p.POL_ATR_TYPE != 3).AsNoTracking();
+        query = query.Where(p =>
+            p.POL_CGP_ID == 8 &&
+            p.POL_ATR_TYPE != 3 &&
+            !_db.TV_POLICIES.Any(endorsed =>
+                endorsed.POL_CGP_ID == p.POL_CGP_ID &&
+                endorsed.POL_ATR_TYPE == p.POL_ATR_TYPE &&
+                endorsed.POL_STATUS == "C" &&
+                endorsed.POL_REF_KEY == p.POL_REF_KEY + " C"))
+            .AsNoTracking();
 
         return await query.Include(v => v.CreatedBy)
                           .Include(v => v.additionalInfo)
@@ -953,7 +964,9 @@ public class PolicyRepository(
     private double GetAppliedGroupDiscountPercent(int memberCount, double? manualDiscountPercent)
     {
         double automaticDiscountPercent = GetAutomaticGroupDiscountPercent(memberCount);
-        if (_currentUserService.Role != 2 || !manualDiscountPercent.HasValue)
+        if (!manualDiscountPercent.HasValue ||
+            !_currentUserService.IsAuthenticated ||
+            _currentUserService.Role != 2)
             return automaticDiscountPercent;
 
         if (manualDiscountPercent.Value is < 0 or > 100)

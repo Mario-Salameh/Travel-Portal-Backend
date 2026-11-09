@@ -7,6 +7,9 @@ public record PolicyReferenceKey
 
     public PolicyReferenceKey(string referenceKey)
     {
+        if (referenceKey.EndsWith(" C", StringComparison.Ordinal))
+            referenceKey = referenceKey[..^2];
+
         var parts = referenceKey.Split(' ');
         if (parts.Length != 4)
             throw new ApplicationException("Invalid reference key format.");

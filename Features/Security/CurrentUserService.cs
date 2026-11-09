@@ -14,6 +14,9 @@ public class CurrentUserService(IHttpContextAccessor http, APPL_CORE db)
     private ClaimsPrincipal User =>
         _http.HttpContext!.User;
 
+    public bool IsAuthenticated =>
+        _http.HttpContext?.User.Identity?.IsAuthenticated == true;
+
     public int Role =>
         int.Parse(User.FindFirstValue(ClaimTypes.Role)
         ?? throw new ApplicationException("Unauthorized Access"));

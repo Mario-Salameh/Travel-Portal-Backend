@@ -134,19 +134,6 @@ public partial class PolicyDocumentService
                         table.Cell().Border(0.5f).Padding(3).AlignRight().Text("تاريخ الميلاد").FontFamily(FontName).FontSize(9);
                     });
 
-                    column.Item().Table(table =>
-                    {
-                        table.ColumnsDefinition(columns =>
-                        {
-                            columns.RelativeColumn(2);
-                            columns.RelativeColumn(6);
-                            columns.RelativeColumn(2);
-                        });
-
-                        table.Cell().Border(0.5f).Padding(3).Text("Age").FontSize(9);
-                        table.Cell().Border(0.5f).Padding(3).Text(age.ToString()).AlignCenter().FontSize(9);
-                        table.Cell().Border(0.5f).Padding(3).AlignRight().Text("العمر ").FontFamily(FontName).FontSize(9);
-                    });
 
                     column.Item().Table(table =>
                     {
