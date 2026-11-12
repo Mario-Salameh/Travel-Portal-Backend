@@ -265,12 +265,14 @@ public static class ReportEndpoints
                 var singlePolicy = policies.Single();
 
                 // Once an endorsement exists, only the endorsed (C) document can be printed.
-                if (!policyRefNumber.EndsWith(" C", StringComparison.OrdinalIgnoreCase) &&
-                    await db.TV_POLICIES.AnyAsync(p =>
-                        p.POL_CGP_ID == currentUserService.CompanyGroupId &&
-                        p.POL_REF_KEY == policyRefNumber + " C"))
+                if (!policyRefNumber.EndsWith(" C", StringComparison.OrdinalIgnoreCase))
                 {
-                    return Results.Conflict("The original policy is unavailable after endorsement. Print the endorsed policy instead.");
+                    var endorsedVersionCount = await db.TV_POLICIES.CountAsync(p =>
+                        p.POL_CGP_ID == currentUserService.CompanyGroupId &&
+                        p.POL_REF_KEY == policyRefNumber + " C");
+
+                    if (endorsedVersionCount > 0)
+                        return Results.Conflict("The original policy is unavailable after endorsement. Print the endorsed policy instead.");
                 }
 
                 // Generating report
