@@ -184,14 +184,33 @@ public static class ReportEndpoints
         .RequireAuthorization("admin")
         .Produces<FileContentResult>(200, "text/csv");
 
-        group.MapGet("/policy", async (APPL_INS db, PolicyDocumentService PolicyDocumentService, ILogger<Program> logger, [FromQuery] string policyRefNumber, [FromQuery] bool isDraft) =>
+        group.MapPost("/policy", async (
+            APPL_INS db,
+            PolicyDocumentService policyDocumentService,
+            CurrentUserService currentUserService,
+            [FromBody] PrintPolicyRequestDTO request) =>
         {
+            if (string.IsNullOrWhiteSpace(request.policyNumber))
+                return Results.BadRequest("Policy number is required.");
+
+            await currentUserService.RetrieveUser();
+            var currentUser = currentUserService.UserInstance();
+            var policyRefNumber = request.policyNumber.Trim();
+            var isDraft = request.printAsDraft;
+
             // report to return
             byte[]? report;
 
             // Searching for policy (Assume it is a single policy)
-            var policies = await db.TV_POLICIES
-                .Where(p => p.POL_REF_KEY == policyRefNumber && p.POL_CGP_ID == 8)
+            var policiesQuery = db.TV_POLICIES
+                .Where(p => p.POL_REF_KEY == policyRefNumber &&
+                            p.POL_CGP_ID == currentUserService.CompanyGroupId);
+
+            // Regular agents can only print policies issued by their own office.
+            if (currentUserService.Role == 1)
+                policiesQuery = policiesQuery.Where(p => p.POL_OFC_ID == currentUser.CompanyOfficeId);
+
+            var policies = await policiesQuery
                 .Include(p => p.DestinationCountry)
                 .Include(p => p.NationalityCountry)
                 .Include(p => p.TypeOfCoverage)
@@ -208,12 +227,18 @@ public static class ReportEndpoints
             {
                 // Getting group policy
                 PolicyReferenceKey policyKey = new PolicyReferenceKey(policyRefNumber);
-                var groupPolicies = await db.TV_POLICY_PACKAGE.Where(policy =>
-                    policy.TPP_CGP_ID == 8 &&
+                var groupPolicyQuery = db.TV_POLICY_PACKAGE.Where(policy =>
+                    policy.TPP_CGP_ID == currentUserService.CompanyGroupId &&
                     policy.TPP_OFC_ID == policyKey.OfficeCode &&
                     policy.TPP_YEAR == policyKey.Year &&
                     policy.TPP_POL_NO == policyKey.PolicyNumber
-                )
+                );
+
+                if (currentUserService.Role == 1)
+                    groupPolicyQuery = groupPolicyQuery.Where(policy =>
+                        policy.TPP_OFC_ID == currentUser.CompanyOfficeId);
+
+                var groupPolicies = await groupPolicyQuery
 
                 .Include(p => p.DestinationCountry)
                 .Include(p => p.subPolicies!)
@@ -230,7 +255,7 @@ public static class ReportEndpoints
                     return Results.NotFound("Group policy not found.");
 
                 // Generating report
-                report = await PolicyDocumentService.GenerateReport(groupPolicy, isDraft);
+                report = await policyDocumentService.GenerateReport(groupPolicy, isDraft);
             }
 
             // it is a single policy (must be 1 record so we will use "Single()" with it)
@@ -239,8 +264,17 @@ public static class ReportEndpoints
                 // Getting single policy
                 var singlePolicy = policies.Single();
 
+                // Once an endorsement exists, only the endorsed (C) document can be printed.
+                if (!policyRefNumber.EndsWith(" C", StringComparison.OrdinalIgnoreCase) &&
+                    await db.TV_POLICIES.AnyAsync(p =>
+                        p.POL_CGP_ID == currentUserService.CompanyGroupId &&
+                        p.POL_REF_KEY == policyRefNumber + " C"))
+                {
+                    return Results.Conflict("The original policy is unavailable after endorsement. Print the endorsed policy instead.");
+                }
+
                 // Generating report
-                report = await PolicyDocumentService.GenerateReport(singlePolicy, isDraft);
+                report = await policyDocumentService.GenerateReport(singlePolicy, isDraft);
             }
 
             // Check if report is ready
@@ -249,7 +283,12 @@ public static class ReportEndpoints
 
             return Results.File(report, "application/pdf", "Policy Report.pdf");
         })
-        .Produces<FileContentResult>(200, "application/pdf");
+        .RequireAuthorization("regular")
+        .Produces<FileContentResult>(StatusCodes.Status200OK, "application/pdf")
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict);
 
         group.MapPost("/policy-customer", async (APPL_INS db, PolicyDocumentService PolicyDocumentService, [FromBody] RetrievePolicyRequestDTO req) =>
         {
